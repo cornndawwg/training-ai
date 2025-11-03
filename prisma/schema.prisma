@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_PRIVATE")
+}
+
+model Company {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  users      User[]
+  roles      Role[]
+  processes  Process[]
+
+  @@map("companies")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("EMPLOYEE") // ADMIN or EMPLOYEE
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Role {
+  id                 String              @id @default(uuid())
+  title              String
+  description        String?
+  companyId          String
+  company            Company             @relation(fields: [companyId], references: [id])
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  knowledgeArtifacts KnowledgeArtifact[]
+  interviewSessions  InterviewSession[]
+
+  @@unique([title, companyId])
+  @@map("roles")
+}
+
+model Process {
+  id                 String              @id @default(uuid())
+  title              String
+  description        String?
+  companyId          String
+  company            Company             @relation(fields: [companyId], references: [id])
+  questions          Json?               // Array of question objects: [{id, question, required, order}]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  interviewSessions  InterviewSession[]
+
+  @@unique([title, companyId])
+  @@index([companyId])
+  @@map("processes")
+}
+
+model KnowledgeArtifact {
+  id              String           @id @default(uuid())
+  title           String
+  description     String?
+  type            String // MARKDOWN, PDF, DOC, DOCX, TXT, CSV, XLSX, HTML, IMAGE, AUDIO, VIDEO, OTHER
+  fileUrl         String?
+  content         String?
+  metadata        Json?
+  roleId          String?
+  role            Role?            @relation(fields: [roleId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  knowledgeChunks KnowledgeChunk[]
+
+  @@map("knowledge_artifacts")
+}
+
+model KnowledgeChunk {
+  id         String            @id @default(uuid())
+  artifactId String
+  artifact   KnowledgeArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  content    String
+  chunkIndex Int
+  tokenCount Int
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+  embeddings Embedding[]
+
+  @@index([artifactId])
+  @@map("knowledge_chunks")
+}
+
+model Embedding {
+  id        String         @id @default(uuid())
+  chunkId   String         @unique
+  chunk     KnowledgeChunk @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  vector    String         @db.Text // Will use pgvector extension
+  model     String         @default("text-embedding-3-small")
+  createdAt DateTime       @default(now())
+
+  @@index([chunkId])
+  @@map("embeddings")
+}
+
+model InterviewSession {
+  id                 String              @id @default(uuid())
+  roleId             String
+  role               Role                @relation(fields: [roleId], references: [id])
+  processId          String?
+  process            Process?            @relation(fields: [processId], references: [id])
+  status             String              @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, CANCELLED
+  startedAt          DateTime            @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  interviewResponses InterviewResponse[]
+
+  @@index([roleId, status])
+  @@index([processId])
+  @@map("interview_sessions")
+}
+
+model InterviewResponse {
+  id             String           @id @default(uuid())
+  sessionId      String
+  session        InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question       String
+  response       String?
+  transcript     String?
+  audioUrl       String?
+  screenshotUrls Json?            // Array of screenshot URLs: ["url1", "url2"]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([sessionId])
+  @@map("interview_responses")
+}
