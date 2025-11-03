@@ -56,6 +56,7 @@ export async function GET(
     }
 
     // Generate markdown
+    // Prisma returns null for optional fields, which matches our PrismaSession type
     const markdown = formatInterviewAsMarkdown(session, {
       includeScreenshots: true,
       screenshotBaseUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000'

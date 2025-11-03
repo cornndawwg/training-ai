@@ -5,12 +5,48 @@ export interface MarkdownExportOptions {
   screenshotBaseUrl?: string;
 }
 
+// Type that matches Prisma's actual return type
+type PrismaSession = {
+  id: string;
+  roleId: string;
+  processId: string | null;
+  status: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  role: {
+    id: string;
+    title: string;
+    description: string | null;
+    companyId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  process: {
+    id: string;
+    title: string;
+    description: string | null;
+    companyId: string;
+    questions: any;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+  interviewResponses: {
+    id: string;
+    sessionId: string;
+    question: string;
+    response: string | null;
+    transcript: string | null;
+    audioUrl: string | null;
+    screenshotUrls: any;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+};
+
 export function formatInterviewAsMarkdown(
-  session: InterviewSession & {
-    role: Role;
-    process?: Process | null;
-    interviewResponses?: InterviewResponse[];
-  },
+  session: PrismaSession,
   options: MarkdownExportOptions = {}
 ): string {
   const { includeScreenshots = true, screenshotBaseUrl = '' } = options;
