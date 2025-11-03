@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
@@ -73,7 +74,7 @@ export const POST = withAuth(async (request: NextRequest, user: any) => {
         response: response || null,
         transcript: transcript || null,
         audioUrl: audioUrl || null,
-        screenshotUrls: screenshotUrls.length > 0 ? screenshotUrls : null
+        screenshotUrls: screenshotUrls.length > 0 ? screenshotUrls : Prisma.JsonNull
       }
     });
 
@@ -163,7 +164,11 @@ export const PUT = withAuth(async (request: NextRequest, user: any) => {
     if (response !== null) updateData.response = response;
     if (transcript !== null) updateData.transcript = transcript;
     if (audioUrl !== null) updateData.audioUrl = audioUrl;
-    if (screenshotUrls.length > 0) updateData.screenshotUrls = screenshotUrls;
+    // Only update screenshotUrls if there are screenshots (existing + new)
+    // If empty, keep existing by not updating the field
+    if (screenshotUrls.length > 0) {
+      updateData.screenshotUrls = screenshotUrls;
+    }
 
     const updatedResponse = await prisma.interviewResponse.update({
       where: { id },
