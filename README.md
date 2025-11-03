@@ -51,7 +51,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 3. **Configure Environment Variables**
    - In your Railway project, go to "Variables"
    - Add the following environment variables:
-     - `DATABASE_URL_PRIVATE` - Use the `DATABASE_URL` from PostgreSQL (Railway provides this automatically, but copy it here)
+     - `DATABASE_URL_PRIVATE` - **IMPORTANT**: Copy the `DATABASE_URL` from your PostgreSQL service. This avoids egress charges by using the private network connection.
      - `JWT_SECRET` - Generate a secure random string (e.g., use `openssl rand -base64 32`)
      - `OPENAI_API_KEY` - Your OpenAI API key
      - `NEXTAUTH_URL` - Your Railway app URL (e.g., `https://your-app-name.up.railway.app`)
