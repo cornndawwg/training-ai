@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthUser, Role, Process, ProcessQuestion, InterviewSession } from '@/types';
 import ScreenshotUpload from '@/components/ScreenshotUpload';
 
-export default function InterviewPage() {
+function InterviewContent() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
@@ -585,5 +585,19 @@ export default function InterviewPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function InterviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg">Loading...</p>
+        </div>
+      </div>
+    }>
+      <InterviewContent />
+    </Suspense>
   );
 }
