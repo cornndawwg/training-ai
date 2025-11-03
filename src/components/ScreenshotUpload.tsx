@@ -1,38 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface ScreenshotUploadProps {
   screenshots: string[];
-  onScreenshotsChange: (screenshots: string[]) => void;
+  onScreenshotsChange: (screenshots: string[], files: File[]) => void;
 }
 
 export default function ScreenshotUpload({ screenshots, onScreenshotsChange }: ScreenshotUploadProps) {
   const [previews, setPreviews] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const newFiles = Array.from(e.target.files || []);
     
     // Create previews
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setPreviews(prev => [...prev, ...newPreviews]);
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    const newFileNames = newFiles.map(f => f.name);
     
-    // Update parent component
-    const fileNames = files.map(f => f.name);
-    onScreenshotsChange([...screenshots, ...fileNames]);
+    setPreviews(prev => [...prev, ...newPreviews]);
+    setFiles(prev => [...prev, ...newFiles]);
+    
+    // Update parent component with URLs (for display) and files (for upload)
+    onScreenshotsChange([...screenshots, ...newFileNames], [...files, ...newFiles]);
   };
 
   const removeScreenshot = (index: number) => {
-    const newScreenshots = screenshots.filter((_, i) => i !== index);
-    const newPreviews = previews.filter((_, i) => i !== index);
-    
     // Revoke object URL to prevent memory leaks
     if (previews[index]) {
       URL.revokeObjectURL(previews[index]);
     }
     
+    const newScreenshots = screenshots.filter((_, i) => i !== index);
+    const newPreviews = previews.filter((_, i) => i !== index);
+    const newFiles = files.filter((_, i) => i !== index);
+    
     setPreviews(newPreviews);
-    onScreenshotsChange(newScreenshots);
+    setFiles(newFiles);
+    onScreenshotsChange(newScreenshots, newFiles);
   };
 
   return (
@@ -41,6 +47,7 @@ export default function ScreenshotUpload({ screenshots, onScreenshotsChange }: S
         Upload Screenshots
       </label>
       <input
+        ref={fileInputRef}
         type="file"
         multiple
         accept="image/*"
